@@ -53,7 +53,7 @@ namespace fft
         * @param prev: fft in the previous iteration. 
         *               Is the time domain signal in the first iteration iff fft or frequency domain spectrum iff ifft
         * @param temp: fft in this iteration. 
-        *               Is the frequency domina spectrum in the last iteration iff fft or time domain signal if fft
+        *               Is the frequency domina spectrum in the last iteration iff fft or time domain signal if ifft
         * @param phases: a vector of complex numbers that are uniformly located on the unity circle
         *  
         * @param turn: the iteration indicator, should be 0 if called outside
@@ -90,7 +90,7 @@ namespace fft
 
 
         /*
-        * A very fast O(N) bit reversal permutation algorithm. Published by John Wiley & Sons Ltd. 2020. 
+        * A very fast O(N) bit reversal permutation algorithm. Published by John Wiley & Sons Ltd. 2002. 
         * https://www.researchgate.net/publication/227682626_A_new_superfast_bit_reversal_algorithm
         * 
         * @param vec: is the vector to permute. Must in the length of 2^N
