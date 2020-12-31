@@ -48,7 +48,7 @@ namespace fft
         }
 
         /*
-        * butterfly forwarding the iteration of fft
+        * butterfly forwarding the iteration of fft, Cooley Tukey algorithm
         * 
         * @param prev: fft in the previous iteration. 
         *               Is the time domain signal in the first iteration iff fft or frequency domain spectrum iff ifft
@@ -152,7 +152,7 @@ namespace fft
         std::vector<std::complex<double>> temp(len);
         std::copy(inputs.begin(), inputs.end(), prev.begin());
         helper::bit_reversal_permutation(prev, n_bits);
-        // butterfly forwarding from input to output
+        // butterfly forwarding from input to output, Cooley Tukey algorithm
         helper::forward(prev, temp, phases, 0, n_bits);
         return (n_bits % 2 == 1) ? temp : prev;
     }
