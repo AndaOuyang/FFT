@@ -96,7 +96,7 @@ namespace fft
         * @param vec: is the vector to permute. Must in the length of 2^N
         * @param n_bits: is N
         */
-        void john_wiley_and_sons_bit_reversal_permutation(std::vector<std::complex<double>> &vec, const int n_bits)
+        void bit_reversal_permutation(std::vector<std::complex<double>> &vec, const int n_bits)
         {
             if (vec.size() <= 2)
             {
@@ -154,7 +154,7 @@ namespace fft
         std::vector<std::complex<double>> prev(len);
         std::vector<std::complex<double>> temp(len);
         std::copy(inputs.begin(), inputs.end(), prev.begin());
-        helper::john_wiley_and_sons_bit_reversal_permutation(prev, n_bits);
+        helper::bit_reversal_permutation(prev, n_bits);
         // butterfly forwarding from input to output
         helper::forward(prev, temp, phases, 0, n_bits);
         return (n_bits % 2 == 1) ? temp : prev;
