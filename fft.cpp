@@ -163,7 +163,7 @@ namespace fft
         // x[n] = 1/N * sum(k=0..N-1) (X[k] * exp(1j*2*pi/N*k*n))
 
         // lets denote m = -k, then
-        // x[n] = 1/N * sum(m=0..1-N) (X[m] * exp(-1j*2*pi/N*k*n)) == fft(X[m])
+        // x[n] = 1/N * sum(m=0..1-N) (X[m] * exp(-1j*2*pi/N*m*n)) == fft(X[m])
         
         // we know fft is circularly periodic, hence X[m] = X[-k] = X[N-k],
         // therefore we can flip the order of X[k] to get X[m]
