@@ -41,7 +41,7 @@ namespace fft
             const double radius = 1;
             for (int i = 0; i < len; ++i)
             {
-                const double phase = - 2 * pi * i / len;
+                const double phase = -2 * pi * i / len;
                 res[i] = std::polar(radius, phase);
             }
             return res;
@@ -61,7 +61,7 @@ namespace fft
         * @param n_bits: log2(length_of_vectors), total number of iterations
         */
         void forward(std::vector<std::complex<double>> &prev, std::vector<std::complex<double>> &temp,
-                         const std::vector<std::complex<double>> &phases, const int turn, const int n_bits)
+                     const std::vector<std::complex<double>> &phases, const int turn, const int n_bits)
         {
             if (turn == n_bits)
             {
@@ -87,7 +87,6 @@ namespace fft
 
             forward(temp, prev, phases, turn + 1, n_bits);
         }
-
 
         /*
         * A very fast O(N) bit reversal permutation algorithm. Published by John Wiley & Sons Ltd. 2002. 
@@ -138,8 +137,6 @@ namespace fft
             }
         }
 
-        
-
     } // namespace helper
 
     std::vector<std::complex<double>> fft(const std::vector<std::complex<double>> &inputs)
@@ -161,13 +158,27 @@ namespace fft
     }
     std::vector<std::complex<double>> ifft(const std::vector<std::complex<double>> &inputs)
     {
-        std::vector<std::complex<double>> res = fft(inputs);
-        // normalization to remove scaling
-        const double len = inputs.size();
-        std::transform(res.begin(), res.end(), res.begin(), [len](const std::complex<double> &num) { return num / len; });
-        // swap order
-        std::reverse(std::next(res.begin()), res.end());
-        return res;
+        // How to calculate ifft by fft?
+        // let x[n] denote time domain signal and X[k] denote frequency domain signal, then
+        // x[n] = 1/N * sum(k=0..N-1) (X[k] * exp(1j*2*pi/N*k*n))
+
+        // lets denote m = -k, then
+        // x[n] = 1/N * sum(m=0..1-N) (X[m] * exp(-1j*2*pi/N*k*n)) == fft(X[m])
+        
+        // we know fft is circularly periodic, hence X[m] = X[-k] = X[N-k],
+        // therefore we can flip the order of X[k] to get X[m]
+
+
+        // flip the order of frequency spectrum
+        std::vector<std::complex<double>> reverse_freq_spectrum(inputs);
+        std::reverse(std::next(reverse_freq_spectrum.begin()), reverse_freq_spectrum.end());
+
+        // normalization by multiplying 1/N to each element
+        const double len = reverse_freq_spectrum.size();
+        std::transform(reverse_freq_spectrum.begin(), reverse_freq_spectrum.end(), reverse_freq_spectrum.begin(),
+                       [len](const std::complex<double> &num) { return num / len; });
+        // fft
+        return fft(reverse_freq_spectrum);
     }
     std::vector<int> round(const std::vector<std::complex<double>> &vec)
     {
