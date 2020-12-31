@@ -6,8 +6,6 @@ namespace fft
     namespace helper
     {
 
-        static int constexpr clockwise = 1;
-        static int constexpr anticlockwise = -1;
         static double constexpr pi = 3.14159265358979323846;
         /*
         * ceiling(log2(x))
@@ -31,20 +29,19 @@ namespace fft
 
         /*
         *
-        * generate the phase vector to assist fft/ifft
+        * generate the phase vector to assist fft
         * 
         * @return a vector of complex numbers that are uniformly located on the unity circle
         * 
         * @param len: is the number of points and length of the output vector. Must be 2^N
-        * @param direction: clockwise for ifft, anticlockwise for fft
         */
-        const std::vector<std::complex<double>> phase_vec(const int len, const int direction)
+        const std::vector<std::complex<double>> phase_vec(const int len)
         {
             std::vector<std::complex<double>> res(len);
             const double radius = 1;
             for (int i = 0; i < len; ++i)
             {
-                const double phase = 2 * pi * i / len * direction;
+                const double phase = - 2 * pi * i / len;
                 res[i] = std::polar(radius, phase);
             }
             return res;
@@ -58,14 +55,12 @@ namespace fft
         * @param temp: fft in this iteration. 
         *               Is the frequency domina spectrum in the last iteration iff fft or time domain signal if fft
         * @param phases: a vector of complex numbers that are uniformly located on the unity circle
-        * 
-        * @param group_size: size of each butterfly group in this turn
-        * 
+        *  
         * @param turn: the iteration indicator, should be 0 if called outside
         * 
         * @param n_bits: log2(length_of_vectors), total number of iterations
         */
-        void fft_forward(std::vector<std::complex<double>> &prev, std::vector<std::complex<double>> &temp,
+        void forward(std::vector<std::complex<double>> &prev, std::vector<std::complex<double>> &temp,
                          const std::vector<std::complex<double>> &phases, const int turn, const int n_bits)
         {
             if (turn == n_bits)
@@ -90,52 +85,9 @@ namespace fft
                 }
             }
 
-            fft_forward(temp, prev, phases, turn + 1, n_bits);
+            forward(temp, prev, phases, turn + 1, n_bits);
         }
 
-        /*
-        * butterfly forwarding the iteration of ifft
-        * 
-        * @param prev: fft in the previous iteration. 
-        *               Is the time domain signal in the first iteration iff fft or frequency domain spectrum iff ifft
-        * @param temp: fft in this iteration. 
-        *               Is the frequency domina spectrum in the last iteration iff fft or time domain signal if fft
-        * @param phases: a vector of complex numbers that are uniformly located on the unity circle
-        * 
-        * @param group_size: size of each butterfly group in this turn
-        * 
-        * @param turn: the iteration indicator, should be 0 if called outside
-        * 
-        * @param n_bits: log2(length_of_vectors), total number of iterations
-        */
-        void ifft_forward(std::vector<std::complex<double>> &prev, std::vector<std::complex<double>> &temp,
-                          const std::vector<std::complex<double>> &phases, const int turn, const int n_bits)
-        {
-            if (turn == n_bits)
-            {
-                return;
-            }
-
-            const int group_size = 1 << (n_bits - turn); // size of butterfly group
-            const int num_groups = prev.size() / group_size;
-            const int phase_angular_freq = num_groups;
-            for (int i_group = 0; i_group < num_groups; ++i_group)
-            {
-                const int base_index = i_group * group_size;
-                // iterate through within the butterfly group
-                for (int j = 0; j < group_size / 2; ++j)
-                {
-                    const int x0_index = base_index + j;
-                    const int x1_index = base_index + group_size / 2 + j;
-                    // prev[x1_index] *= phases[j * phase_angular_freq];
-                    temp[x0_index] = prev[x0_index] + prev[x1_index];
-                    temp[x1_index] = prev[x0_index] - prev[x1_index];
-                    temp[x1_index] *= phases[j * phase_angular_freq];
-                }
-            }
-
-            ifft_forward(temp, prev, phases, turn + 1, n_bits);
-        }
 
         /*
         * A very fast O(N) bit reversal permutation algorithm. Published by John Wiley & Sons Ltd. 2020. 
@@ -186,6 +138,8 @@ namespace fft
             }
         }
 
+        
+
     } // namespace helper
 
     std::vector<std::complex<double>> fft(const std::vector<std::complex<double>> &inputs)
@@ -196,35 +150,23 @@ namespace fft
         }
         const int n_bits = helper::upper_log2(inputs.size());
         const int len = 1 << n_bits;
-        const std::vector<std::complex<double>> phases = helper::phase_vec(len, helper::anticlockwise);
+        const std::vector<std::complex<double>> phases = helper::phase_vec(len);
         std::vector<std::complex<double>> prev(len);
         std::vector<std::complex<double>> temp(len);
         std::copy(inputs.begin(), inputs.end(), prev.begin());
         helper::john_wiley_and_sons_bit_reversal_permutation(prev, n_bits);
         // butterfly forwarding from input to output
-        helper::fft_forward(prev, temp, phases, 0, n_bits);
+        helper::forward(prev, temp, phases, 0, n_bits);
         return (n_bits % 2 == 1) ? temp : prev;
     }
     std::vector<std::complex<double>> ifft(const std::vector<std::complex<double>> &inputs)
     {
-        // return helper::cooley_tukey(vec, helper::clockwise);
-        if (inputs.empty())
-        {
-            return {};
-        }
-        const int n_bits = helper::upper_log2(inputs.size());
-        const int len = 1 << n_bits;
-        const std::vector<std::complex<double>> phases = helper::phase_vec(len, helper::clockwise);
-        std::vector<std::complex<double>> prev(len);
-        std::vector<std::complex<double>> temp(len);
-        std::copy(inputs.begin(), inputs.end(), prev.begin());
-
-        // butterfly forwarding from input to output
-        helper::ifft_forward(prev, temp, phases, 0, n_bits);
-        std::vector<std::complex<double>> &res = (n_bits % 2 == 1) ? temp : prev;
-        helper::john_wiley_and_sons_bit_reversal_permutation(res, n_bits);
-        // divide by length to normalize the time domain signal
-        std::transform(res.begin(), res.end(), res.begin(), [len](const std::complex<double> &num) { return num / static_cast<double>(len); });
+        std::vector<std::complex<double>> res = fft(inputs);
+        // normalization to remove scaling
+        const double len = inputs.size();
+        std::transform(res.begin(), res.end(), res.begin(), [len](const std::complex<double> &num) { return num / len; });
+        // swap order
+        std::reverse(std::next(res.begin()), res.end());
         return res;
     }
     std::vector<int> round(const std::vector<std::complex<double>> &vec)
