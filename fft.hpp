@@ -1,6 +1,6 @@
 #include <vector>
 #include <complex>
-
+// v1: seperate fft and ifft implementations. may have a lot of redundant code 
 namespace fft
 {
     /*
