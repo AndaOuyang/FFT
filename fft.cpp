@@ -31,18 +31,20 @@ namespace fft
         *
         * generate the phase vector to assist fft
         * 
-        * @return a vector of complex numbers that are uniformly located on the unity circle
+        * @return a vector of complex numbers that are uniformly located on the bottom half 
+        *                   of the unity circle.
+        *           
         * 
         * @param len: is the number of points and length of the output vector. Must be 2^N
         */
         const std::vector<std::complex<double>> phase_vec(const int len)
         {
-            std::vector<std::complex<double>> res(len);
+            std::vector<std::complex<double>> res(len/2);
             const double radius = 1;
-            for (int i = 0; i < len; ++i)
+            for (int i = 0; i < len/2; ++i)
             {
                 const double phase = -2 * pi * i / len;
-                res[i] = std::polar(radius, phase);
+                res[i] = std::polar(radius, phase); // res[i] = W_N^i = exp(-2j*pi*i/N)
             }
             return res;
         }
